@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Shambhala — Factuur</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@500;700&display=swap');
+
+  :root {
+    --ink:       #1a1a1a;
+    --soft:      #6b6b6b;
+    --rule:      #e2ddd8;
+    --bg:        #faf8f5;
+    --card:      #ffffff;
+    --accent:    #c4853a;
+    --accent-lt: #f5ede0;
+    --green:     #2e7d52;
+    --danger:    #c0392b;
+    --radius:    12px;
+    --shadow:    0 2px 16px rgba(0,0,0,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── APP SHELL ── */
+  .app-header {
+    background: var(--ink);
+    color: #fff;
+    padding: 18px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .app-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .app-header span {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: var(--ink);
+    padding: 0 20px;
+    gap: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.45);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── FORM LAYOUT ── */
+  .form-body {
+    padding: 20px 16px 100px;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .section {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px 16px;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--soft);
+    margin-bottom: 5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1.5px solid var(--rule);
+    border-radius: 8px;
+    padding: 11px 13px;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b6b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+
+  /* ── LINE ITEMS ── */
+  .line-item {
+    background: var(--bg);
+    border: 1.5px solid var(--rule);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .line-item .row-3 { align-items: end; }
+
+  .remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1.1rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .remove-btn:hover { color: var(--danger); }
+
+  .line-subtotal {
+    font-size: 0.78rem;
+    color: var(--soft);
+    text-align: right;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  .line-subtotal strong { color: var(--ink); }
+
+  .add-line-btn {
+    width: 100%;
+    background: none;
+    border: 1.5px dashed var(--rule);
+    border-radius: 8px;
+    color: var(--accent);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    margin-top: 4px;
+  }
+  .add-line-btn:hover {
+    background: var(--accent-lt);
+    border-color: var(--accent);
+  }
+
+  /* ── TOTALS ── */
+  .totals-block { margin-top: 4px; }
+  .totals-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.9rem;
+  }
+  .totals-row:last-child { border-bottom: none; }
+  .totals-row.total-final {
+    padding-top: 12px;
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+  .totals-row.total-final .amt { color: var(--green); }
+
+  /* ── TOGGLES ── */
+  .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--rule);
+    border-radius: 24px;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+  .toggle-track:before {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    left: 3px; top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle-switch input:checked + .toggle-track { background: var(--accent); }
+  .toggle-switch input:checked + .toggle-track:before { transform: translateX(20px); }
+  .toggle-label { font-size: 0.85rem; color: var(--ink); }
+
+  /* ── ACTION BAR ── */
+  .action-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--rule);
+    padding: 14px 16px env(safe-area-inset-bottom);
+    display: flex;
+    gap: 10px;
+    max-width: 640px;
+    margin: 0 auto;
+    z-index: 99;
+  }
+
+  .btn {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 14px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.02em;
+  }
+  .btn:active { transform: scale(0.97); opacity: 0.85; }
+  .btn-primary { background: var(--ink); color: #fff; }
+  .btn-secondary { background: var(--accent-lt); color: var(--accent); }
+
+  /* ── PREVIEW ── */
+  .preview-wrapper {
+    padding: 16px;
+    max-width: 640px;
+    margin: 0 auto;
+    padding-bottom: 100px;
+  }
+
+  #invoice-preview {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 32px 28px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  .inv-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+    gap: 16px;
+  }
+  .inv-company h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .inv-company p {
+    font-size: 0.78rem;
+    color: var(--soft);
+    margin-top: 6px;
+    line-height: 1.7;
+  }
+  .inv-meta {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .inv-meta .inv-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+  }
+  .inv-meta .inv-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .inv-meta .inv-dates {
+    font-size: 0.75rem;
+    color: var(--soft);
+    margin-top: 6px;
+    line-height: 1.7;
+  }
+
+  .inv-divider {
+    height: 1px;
+    background: var(--rule);
+    margin: 20px 0;
+  }
+
+  .inv-to-block {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+  }
+  .inv-to-block .to-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .inv-to-block p { font-size: 0.82rem; line-height: 1.65; color: var(--ink); }
+
+  .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  .inv-table th {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--soft);
+    padding: 0 0 8px;
+    border-bottom: 1px solid var(--rule);
+    text-align: left;
+  }
+  .inv-table th:last-child, .inv-table td:last-child { text-align: right; }
+  .inv-table td {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.83rem;
+    vertical-align: top;
+  }
+  .inv-table td:nth-child(2), .inv-table th:nth-child(2) { text-align: center; }
+  .inv-table td:nth-child(3), .inv-table th:nth-child(3) { text-align: right; }
+  .inv-table tr:last-child td { border-bottom: none; }
+
+  .inv-totals { margin-left: auto; width: 220px; margin-bottom: 20px; }
+  .inv-total-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.83rem; }
+  .inv-total-row.strikethrough { text-decoration: line-through; color: var(--soft); }
+  .inv-total-divider { height: 1px; background: var(--rule); margin: 8px 0; }
+  .inv-total-final {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .inv-total-final span:last-child { color: var(--green); }
+
+  .inv-summary-box {
+    border: 1.5px solid var(--rule);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+  .inv-summary-box .sum-title {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .inv-summary-grid { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; font-size: 0.8rem; }
+  .inv-summary-grid dt { color: var(--soft); white-space: nowrap; }
+  .inv-summary-grid dd { font-weight: 500; color: var(--ink); }
+
+  .inv-conditions {
+    font-size: 0.68rem;
+    color: var(--soft);
+    line-height: 1.6;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+  }
+  .inv-conditions strong { color: var(--ink); display: block; margin-bottom: 4px; font-size: 0.7rem; }
+
+  /* ── BTW TOGGLE ── */
+  .btw-toggle { display: flex; gap: 6px; margin-top: 8px; }
+  .btw-btn {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 7px 4px;
+    border: 1.5px solid var(--rule);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--soft);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .btw-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-lt);
+    color: var(--accent);
+  }
+  .btw-btn.active-zero {
+    border-color: var(--soft);
+    background: #f0f0f0;
+    color: var(--ink);
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 24px 20px 32px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.22s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+  }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+  /* ── REEDS VOLDAAN STAMP ── */
+  .inv-stamp {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #edf7f1;
+    border-left: 4px solid var(--green);
+    color: var(--green);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 20px;
+  }
+
+  /* ── CLIENTS TAB ── */
+  .clients-body {
+    padding: 16px;
+    max-width: 640px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+  }
+  .client-search {
+    margin-bottom: 12px;
+  }
+  .client-card {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .client-card:hover { background: var(--accent-lt); }
+  .client-name { font-weight: 600; font-size: 0.92rem; margin-bottom: 2px; }
+  .client-detail { font-size: 0.75rem; color: var(--soft); }
+
+  /* ── PRINT ── */
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
+    html { height: auto !important; }
+    body { height: auto !important; min-height: 0 !important; overflow: visible !important; background: white; padding: 0; margin: 0; }
+    /* Hide everything except the invoice preview */
+    body > * { display: none !important; }
+    #tab-preview { display: block !important; height: auto !important; min-height: 0 !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; }
+    .preview-wrapper { display: block !important; padding: 0 !important; margin: 0 !important; max-width: none !important; height: auto !important; min-height: 0 !important; padding-bottom: 0 !important; }
+    #invoice-preview { display: block !important; box-shadow: none !important; border-radius: 0 !important; padding: 16px 28px !important; height: auto !important; min-height: 0 !important; }
+    .action-bar, .btn { display: none !important; }
+  }
+
+  @media (max-width: 400px) {
+    .inv-header { flex-direction: column; }
+    .inv-meta { text-align: left; }
+    .row-3 { grid-template-columns: 1fr 1fr; }
+    .row-3 .field:last-child { grid-column: span 2; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1>Shambhala</h1>
+  <span>Facturatie</span>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" onclick="switchTab('form')">✏️ Opstellen</button>
+  <button class="tab-btn" onclick="switchTab('preview')">👁 Voorbeeld</button>
+  <button class="tab-btn" onclick="switchTab('clients')">👥 Klanten</button>
+</nav>
+
+<!-- ── TAB: FORM ── -->
+<div id="tab-form" class="tab-panel active">
+<div class="form-body">
+
+  <!-- Factuurnummer & datum -->
+  <div class="section">
+    <div class="section-title">Factuurgegevens</div>
+    <div class="row-2">
+      <div class="field">
+        <label>Factuurnr</label>
+        <input type="text" id="inv-number" value="Y026-013" placeholder="Y026-001">
+      </div>
+      <div class="field">
+        <label>Factuurdatum</label>
+        <input type="date" id="inv-date">
+      </div>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Vervaldatum</label>
+        <input type="date" id="inv-due">
+      </div>
+      <div class="field">
+        <label>BTW klant</label>
+        <input type="text" id="inv-client-btw" placeholder="BE0123456789">
+      </div>
+    </div>
+  </div>
+
+  <!-- Klant -->
+  <div class="section">
+    <div class="section-title">Klant</div>
+    <div class="field">
+      <label>Selecteer klant</label>
+      <select id="client-select" onchange="fillClient()">
+        <option value="">— Kies klant of vul manueel in —</option>
+      </select>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Contactpersoon</label>
+        <input type="text" id="client-contact" placeholder="Naam">
+      </div>
+      <div class="field">
+        <label>Bedrijf</label>
+        <input type="text" id="client-bedrijf" placeholder="Bedrijfsnaam">
+      </div>
+    </div>
+    <div class="field">
+      <label>Adres</label>
+      <input type="text" id="client-adres" placeholder="Straat en nummer">
+    </div>
+    <div class="field">
+      <label>Postcode &amp; gemeente</label>
+      <input type="text" id="client-postplaats" placeholder="9000 Gent">
+    </div>
+  </div>
+
+  <!-- Lijnen -->
+  <div class="section">
+    <div class="section-title">Prestaties</div>
+    <div id="line-items"></div>
+    <button class="add-line-btn" onclick="addLine()">+ Lijn toevoegen</button>
+  </div>
+
+  <!-- Totalen -->
+  <div class="section">
+    <div class="section-title">Totalen</div>
+    <div class="totals-block">
+      <div class="totals-row"><span>Subtotaal excl. BTW</span><span id="t-subtotal">€ 0,00</span></div>
+      <div class="totals-row"><span>BTW</span><span id="t-btw">€ 0,00</span></div>
+      <div class="totals-row total-final"><span>Te betalen</span><span class="amt" id="t-total">€ 0,00</span></div>
+    </div>
+  </div>
+
+  <!-- Opties -->
+  <div class="section">
+    <div class="section-title">Opties</div>
+    <div class="toggle-row">
+      <label class="toggle-switch">
+        <input type="checkbox" id="reeds-voldaan" onchange="updatePreview()">
+        <span class="toggle-track"></span>
+      </label>
+      <span class="toggle-label">Reeds voldaan</span>
+    </div>
+  </div>
+
+</div>
+<div class="action-bar">
+  <button class="btn btn-secondary" onclick="switchTab('preview')">Voorbeeld →</button>
+  <button class="btn btn-primary" onclick="printInvoice()">🖨️ Afdrukken / PDF</button>
+</div>
+</div>
+
+<!-- ── TAB: PREVIEW ── -->
+<div id="tab-preview" class="tab-panel">
+<div class="preview-wrapper">
+  <div id="invoice-preview"></div>
+</div>
+<div class="action-bar">
+  <button class="btn btn-secondary" onclick="switchTab('form')">← Bewerken</button>
+  <button class="btn btn-primary" onclick="printInvoice()">🖨️ Afdrukken / PDF</button>
+</div>
+</div>
+
+<!-- ── TAB: CLIENTS ── -->
+<div id="tab-clients" class="tab-panel">
+<div class="clients-body">
+  <div class="client-search">
+    <input type="text" id="client-filter" placeholder="🔍 Zoek klant…" oninput="renderClientList()">
+  </div>
+  <button class="add-line-btn" style="margin-bottom:12px;" onclick="openNewClientModal()">+ Nieuwe klant toevoegen</button>
+  <div id="client-list"></div>
+</div>
+</div>
+
+<!-- ── MODAL: NIEUWE KLANT ── -->
+<div class="modal-overlay" id="new-client-modal" onclick="closeModalIfOutside(event)">
+  <div class="modal">
+    <div class="modal-title">Nieuwe klant</div>
+    <div class="row-2">
+      <div class="field">
+        <label>Contactpersoon *</label>
+        <input type="text" id="nc-contact" placeholder="Naam">
+      </div>
+      <div class="field">
+        <label>Bedrijf</label>
+        <input type="text" id="nc-bedrijf" placeholder="Bedrijfsnaam">
+      </div>
+    </div>
+    <div class="field">
+      <label>Adres</label>
+      <input type="text" id="nc-adres" placeholder="Straat en nummer">
+    </div>
+    <div class="field">
+      <label>Postcode &amp; gemeente</label>
+      <input type="text" id="nc-postplaats" placeholder="9000 Gent">
+    </div>
+    <div class="field">
+      <label>BTW-nummer</label>
+      <input type="text" id="nc-btw" placeholder="BE0123456789">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeNewClientModal()">Annuleren</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveNewClient()">Opslaan &amp; selecteren</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+const CLIENTS = [
+  {contact:"Rik Van Meirhaeghe",bedrijf:"4H",adres:"Deinse Baan 10",postplaats:"B-9750 ZINGEM",btw:"BE0887498035",prestatie:"advies",prijs:29},
+  {contact:"Karel Beck",bedrijf:"",adres:"",postplaats:"Ronse",btw:"",prestatie:"inspanningstest",prijs:60},
+  {contact:"Steven Dejager",bedrijf:"",adres:"",postplaats:"Nokere",btw:"",prestatie:"",prijs:0},
+  {contact:"Brecht Vandenborre",bedrijf:"",adres:"",postplaats:"Kortrijk",btw:"",prestatie:"trainingsschema combinatie",prijs:89},
+  {contact:"Jan Verellen",bedrijf:"",adres:"boomsesteenweg",postplaats:"Wilrijk",btw:"",prestatie:"trainingsschema hardlopen",prijs:69},
+  {contact:"Valerie Dujardyn",bedrijf:"",adres:"",postplaats:"",btw:"",prestatie:"trainingsschema wielrennen",prijs:69},
+  {contact:"Francis de Neve",bedrijf:"",adres:"",postplaats:"",btw:"",prestatie:"deelname MTB weekend",prijs:49.59},
+  {contact:"Christophe Roman",bedrijf:"",adres:"",postplaats:"",btw:"",prestatie:"inspanningstest met korting",prijs:41.32},
+  {contact:"Benjamin Praet",bedrijf:"",adres:"",postplaats:"",btw:"",prestatie:"trainingsschema UCI 2",prijs:66},
+  {contact:"Laurens Kesteloot",bedrijf:"",adres:"",postplaats:"",btw:"",prestatie:"trainingsschema parijs",prijs:33.06},
+  {contact:"Charles Bouckaert",bedrijf:"",adres:"",postplaats:"",btw:"",prestatie:"sponsoring",prijs:0},
+  {contact:"Arnaud Colle",bedrijf:"",adres:"Wildendriesstraat 7",postplaats:"9771 Nokere",btw:"",prestatie:"advies 2",prijs:0},
+  {contact:"Benoit Sevens",bedrijf:"",adres:"",postplaats:"",btw:"",prestatie:"begeleiden en coachen",prijs:0},
+  {contact:"Jean Pierre Hollevoet",bedrijf:"Explorum",adres:"Trassersweg 448",postplaats:"1120 Brussel",btw:"BE0540522897",prestatie:"fysieke training",prijs:0},
+  {contact:"GPS4life",bedrijf:"",adres:"Broekzijstraat 35",postplaats:"2275 Lille",btw:"BE0828722270",prestatie:"autopiloot Kurt Dujardyn",prijs:0},
+  {contact:"Lisco bvba",bedrijf:"",adres:"Duivebergen 12",postplaats:"3140 Keerbergen",btw:"BE0897388669",prestatie:"Trainingsschema Cube",prijs:55},
+  {contact:"Debeule Gillian",bedrijf:"",adres:"Zeeldraaiersstraat 16",postplaats:"9160 Lokeren",btw:"",prestatie:"coaching",prijs:0},
+  {contact:"Levi Mariën",bedrijf:"",adres:"Poorthoflaan 12",postplaats:"2180 Ekeren",btw:"",prestatie:"Trainingsschema per kwartaal",prijs:386},
+  {contact:"Thomas Van Biervliet",bedrijf:"",adres:"",postplaats:"Wanegem-lede",btw:"",prestatie:"",prijs:0},
+  {contact:"Olivier Coorevits",bedrijf:"",adres:"",postplaats:"",btw:"",prestatie:"",prijs:0},
+  {contact:"Bart Dheedene",bedrijf:"",adres:"",postplaats:"",btw:"",prestatie:"",prijs:0},
+  {contact:"Philippe Lecluyse",bedrijf:"",adres:"Industrielaan 16",postplaats:"9800 Deinze",btw:"",prestatie:"",prijs:0},
+  {contact:"Gebr. De Rycke nv",bedrijf:"Gebr. De Rycke nv",adres:"Vesten 57",postplaats:"9120 Beveren",btw:"BE0416668547",prestatie:"",prijs:0},
+  {contact:"CUBE FINTRO CT",bedrijf:"JWT VLAAMSE ARDENNEN",adres:"NIEUWSTRAAT 32",postplaats:"9810 NAZARETH",btw:"BE0818401668",prestatie:"",prijs:0},
+  {contact:"Charles Van Haverbeke",bedrijf:"",adres:"Dikmuidsesteenweg",postplaats:"Ieper",btw:"",prestatie:"",prijs:0},
+  {contact:"Kurt Dujardyn",bedrijf:"Fly and Race School",adres:"Roden Ossenstraat 5A",postplaats:"8300 Knokke",btw:"BE0820650484",prestatie:"",prijs:0},
+  {contact:"Familie Dejager",bedrijf:"",adres:"Kortrijkseheerweg",postplaats:"9800 Deinze",btw:"",prestatie:"",prijs:0},
+  {contact:"Leen Van Meirhaeghe",bedrijf:"2VMS",adres:"Broekzijstraat 35",postplaats:"2275 Lille",btw:"BE0473129871",prestatie:"",prijs:0},
+  {contact:"Valcke Bowling Service",bedrijf:"",adres:"Menenstraat 423",postplaats:"Wevelgem",btw:"BE0424878905",prestatie:"",prijs:0},
+  {contact:"Hedwig Neels",bedrijf:"",adres:"Guido Gezellelaan 76",postplaats:"2140 Mortsel",btw:"",prestatie:"",prijs:0},
+  {contact:"Louis Vanhulle",bedrijf:"LOVU bvba",adres:"Papegaaistraat 42",postplaats:"9000 Gent",btw:"BE0835465354",prestatie:"",prijs:0},
+  {contact:"Philippe Derijckere",bedrijf:"Economical Security New BVBA",adres:"Stenenbrug 110",postplaats:"2140 Borgerhout",btw:"",prestatie:"",prijs:0},
+  {contact:"Fashion PR Benelux Bvba",bedrijf:"",adres:"Maesstraat 44",postplaats:"2060 Antwerpen",btw:"BE0464277731",prestatie:"",prijs:0},
+  {contact:"Tristan Dhondt",bedrijf:"Tristan Dhondt BVBA",adres:"Weidelaan 2",postplaats:"9090 Melle",btw:"BE0808932488",prestatie:"",prijs:0},
+  {contact:"Dr. Yannick Nijs",bedrijf:"algemeen chirurg BVBA",adres:"Wildemansweg 10 bus 303",postplaats:"3020 Herent",btw:"BE0566960941",prestatie:"",prijs:0},
+  {contact:"Carlo Deboulle",bedrijf:"",adres:"Kloosterstraat 25",postplaats:"9700 Zingem",btw:"",prestatie:"",prijs:0},
+  {contact:"Katrien Van Goethem BVBA",bedrijf:"",adres:"St Paulusstraat 27/301",postplaats:"2000 Antwerpen",btw:"BE0563370456",prestatie:"",prijs:0},
+  {contact:"Lentle Nijs",bedrijf:"TC3 bvba",adres:"Naamsevest 84",postplaats:"3000 Leuven",btw:"BE0562903272",prestatie:"",prijs:0},
+  {contact:"Van Hoof Ingrid",bedrijf:"",adres:"M Noestraat 113 b1",postplaats:"3054 Vaalbeek",btw:"BE0629965906",prestatie:"",prijs:0},
+  {contact:"VMMD bvba",bedrijf:"",adres:"Bottenhoek 7",postplaats:"8540 Deerlijk",btw:"BE0635797782",prestatie:"",prijs:0},
+  {contact:"Louis Vervaeke",bedrijf:"",adres:"Regenboog 5 bus 208",postplaats:"9090 Melle",btw:"",prestatie:"",prijs:0},
+  {contact:"Jasper Stuyven",bedrijf:"",adres:"Paul Van Ostaijenlaan 41",postplaats:"3001 Heverlee",btw:"",prestatie:"",prijs:0},
+  {contact:"Britt Van Namen",bedrijf:"COMM.V",adres:"Fazantenlaan 22",postplaats:"2242 Pulderbos",btw:"BE0636817470",prestatie:"",prijs:0},
+  {contact:"Nicolas Mertens",bedrijf:"STYLECOM bvba",adres:"Brialmontlei 31 bus 1",postplaats:"2018 Antwerpen",btw:"BE0863177165",prestatie:"",prijs:0},
+  {contact:"Carlien Cavens",bedrijf:"Cave Canem",adres:"Kielsevest 60",postplaats:"2018 Antwerpen",btw:"BE0672528318",prestatie:"",prijs:0},
+  {contact:"Jef Cavens",bedrijf:"Techno Sapiens bvba",adres:"Gierleseweg 10",postplaats:"2340 Beerse",btw:"BE0458764468",prestatie:"",prijs:0},
+  {contact:"TYD BVBA",bedrijf:"",adres:"Stationsstraat 155/6",postplaats:"9890 Gavere",btw:"BE0887498035",prestatie:"",prijs:0},
+  {contact:"Be alice bvba",bedrijf:"Isabelle Dumortier",adres:"Napoleonkaai 23",postplaats:"2000 Antwerpen",btw:"BE0661756170",prestatie:"",prijs:0},
+  {contact:"Nathalie Vandemoortele",bedrijf:"Action Wear",adres:"Drapstraat 23",postplaats:"9810 Nazareth",btw:"BE0423635721",prestatie:"",prijs:0},
+  {contact:"Valentijn Destoop",bedrijf:"Quidante bvba",adres:"Kapellestraat 36",postplaats:"9890 Gavere",btw:"BE0836359140",prestatie:"",prijs:0},
+  {contact:"Elke Weemaes",bedrijf:"Kairos bvba",adres:"Broekbosstraat 20",postplaats:"2550 Kontich",btw:"BE0892274888",prestatie:"",prijs:0},
+  {contact:"Pierre Maere",bedrijf:"Inflights bvba",adres:"Gierstraat 6",postplaats:"2000 Antwerpen",btw:"BE0677884203",prestatie:"",prijs:0},
+  {contact:"Ann Simons",bedrijf:"Wingment NV",adres:"Kempische Steenweg 311 bus 5",postplaats:"3500 Hasselt",btw:"BE0691905750",prestatie:"",prijs:0},
+  {contact:"Steven Proost",bedrijf:"Logi Signs",adres:"Koeybleuken 28",postplaats:"2300 Turnhout",btw:"BE0821878228",prestatie:"",prijs:0},
+  {contact:"Isabelle Dumortier",bedrijf:"De Onderaannemer bvba",adres:"Lamorinierstraat 123",postplaats:"2018 Antwerpen",btw:"BE0822478836",prestatie:"",prijs:0},
+  {contact:"Benedicte Leys",bedrijf:"QMS bvba / Antepassio",adres:"Venuslei 10",postplaats:"2950 Kapellen",btw:"BE0458978264",prestatie:"",prijs:0},
+  {contact:"Florence Leroy",bedrijf:"Isis Dies Scrl fs",adres:"Rue de Monceau Fontaine 42 B19",postplaats:"6031 Monceau-sur-Sambre",btw:"BE0457815056",prestatie:"",prijs:0},
+  {contact:"Dirk Lambrechts",bedrijf:"Geo Square NV",adres:"Prins Boudewijnlaan 41",postplaats:"2650 Edegem",btw:"BE0863846267",prestatie:"",prijs:0},
+  {contact:"Thomas Wijnen",bedrijf:"Santosha BVBA",adres:"Stuiversstraat 1",postplaats:"1000 Brussel",btw:"BE0716698356",prestatie:"",prijs:0},
+  {contact:"Jennifer Elliot",bedrijf:"Ubuntu Comm V",adres:"Raapstraat 4 bus 201",postplaats:"2000 Antwerpen",btw:"BE0661796950",prestatie:"",prijs:0},
+  {contact:"Eveline Van Herreweghen Yoga",bedrijf:"",adres:"E. Pecherstraat 1",postplaats:"2000 Antwerpen",btw:"BE0541976612",prestatie:"",prijs:0},
+  {contact:"Bernard Vermeyen",bedrijf:"Decola Nutraceutics bvba",adres:"Vliegplein 66",postplaats:"9990 Maldegem",btw:"BE0672468831",prestatie:"",prijs:0},
+  {contact:"Wendy Geeraerts",bedrijf:"Asteria BVBA",adres:"Scharre 33",postplaats:"9961 Boekhoute",btw:"BE0671589990",prestatie:"",prijs:0},
+  {contact:"Victor Campenaerts",bedrijf:"",adres:"Dorpsstraat 29 B0101",postplaats:"3020 Herent",btw:"",prestatie:"",prijs:0},
+  {contact:"Lodewick Prompers",bedrijf:"Mercer Street bvba",adres:"Solvynsstraat 55/401",postplaats:"2018 Antwerpen",btw:"BE0686961720",prestatie:"",prijs:0},
+  {contact:"Maxim De Laet",bedrijf:"Bos",adres:"Rozenlaan 13",postplaats:"2950 Kapellen",btw:"BE0830772732",prestatie:"",prijs:0},
+  {contact:"Dominique Heiremans",bedrijf:"Energie in Balans",adres:"Rue des Prés 47",postplaats:"1350 Orp-le-Grand",btw:"BE0542617109",prestatie:"",prijs:0},
+  {contact:"Hilde Van Bulck",bedrijf:"Samtati bvba",adres:"Gasstraat 19",postplaats:"2570 Duffel",btw:"BE0838515015",prestatie:"",prijs:0},
+  {contact:"Nelson Donck",bedrijf:"Conge NV",adres:"D'Herbouvillekaai 19",postplaats:"2020 Antwerpen",btw:"BE0883297539",prestatie:"",prijs:0},
+  {contact:"Anita Van Broeck",bedrijf:"De Walnoot vzw",adres:"Hanendreef 135",postplaats:"2930 Brasschaat",btw:"BE0439382779",prestatie:"",prijs:0},
+  {contact:"Maarten Mareels",bedrijf:"Het Atelier BVBA",adres:"Lange Rekstraat 14",postplaats:"9100 Sint Niklaas",btw:"BE0877868608",prestatie:"",prijs:0},
+  {contact:"Jan Gyselinck",bedrijf:"Surya",adres:"Ezelstraat 24",postplaats:"8000 Brugge",btw:"BE0519959689",prestatie:"",prijs:0},
+  {contact:"Joris Janssens",bedrijf:"Joris Janssens",adres:"Boekenbergplein 17",postplaats:"2100 Deurne",btw:"",prestatie:"",prijs:0},
+  {contact:"Geo Solutions",bedrijf:"Geo Solutions",adres:"Prins Boudewijnlaan 41",postplaats:"2650 Edegem",btw:"BE0888908493",prestatie:"",prijs:0},
+  {contact:"Dennis Geelen",bedrijf:"Dennis Geelen",adres:"Bijlokstraat 54",postplaats:"3020 Herent",btw:"BE0726892957",prestatie:"",prijs:0},
+  {contact:"DR BARBIER JUSTINE",bedrijf:"ORTHOPEDISCH CHIRURG",adres:"Sint Denijslaan 124 A",postplaats:"9000 Gent",btw:"BE0727813467",prestatie:"",prijs:0},
+  {contact:"Thomas Poelmans",bedrijf:"GC Projects Kenya Ltd",adres:"PO Box 306 - 00502",postplaats:"Nairobi, Kenya",btw:"",prestatie:"",prijs:0},
+  {contact:"Thomas Wijnen (TW)",bedrijf:"QA bv",adres:"Korte Zavelstraat 16 b20",postplaats:"2060 Antwerpen",btw:"BE0736898409",prestatie:"",prijs:0},
+  {contact:"Tjeu Leenders",bedrijf:"De Zeven Eiken vzw",adres:"Hanendreef 154",postplaats:"2930 Brasschaat",btw:"BE0435731819",prestatie:"",prijs:0},
+  {contact:"Rita Vanhie",bedrijf:"Zonnevlecht",adres:"Hoek 36",postplaats:"3930 Achel",btw:"",prestatie:"",prijs:0},
+  {contact:"Erwin Janssen",bedrijf:"Happily Ever After bvba",adres:"Van Putlei 43A",postplaats:"2018 Antwerpen",btw:"BE0464008804",prestatie:"",prijs:0},
+  {contact:"Carlien Cavens (Djerico)",bedrijf:"Djerico BV",adres:"Kielsevest 60",postplaats:"2018 Antwerpen",btw:"BE0746516156",prestatie:"",prijs:0},
+  {contact:"Alpex nv",bedrijf:"",adres:"'t Serclaeslei 7",postplaats:"2930 Brasschaat",btw:"BE0422757474",prestatie:"",prijs:0},
+  {contact:"Arkenia",bedrijf:"Mark Proost",adres:"Cederlaan 25",postplaats:"2900 Schoten",btw:"BE0503820671",prestatie:"",prijs:0},
+  {contact:"HCPS",bedrijf:"Thomas Vanzegbroeck",adres:"Koning Albertstraat 28",postplaats:"2610 Wilrijk",btw:"BE0606991851",prestatie:"",prijs:0},
+  {contact:"Leap Time bvba",bedrijf:"Geert Pauwels",adres:"Pierstraat 324",postplaats:"2550 Kontich",btw:"BE0637793905",prestatie:"",prijs:0},
+  {contact:"La Petite Fabriek",bedrijf:"Fien Dewaele",adres:"Rue Beyaert 57",postplaats:"7500 Tournai",btw:"BE0831374231",prestatie:"",prijs:0},
+  {contact:"Bernard Hendrikx",bedrijf:"True North Asset Management NV",adres:"Muldersdreef 31",postplaats:"9831 Deurle",btw:"BE0457827330",prestatie:"",prijs:0},
+  {contact:"Diego Vanhee",bedrijf:"Mind Invest",adres:"Ruytenburgstraat 42 bus 3",postplaats:"2600 Berchem",btw:"BE0479855832",prestatie:"",prijs:0},
+  {contact:"Sylvie Arts",bedrijf:"Nimue BV",adres:"Arsenaalstraat 5, bus 11",postplaats:"2000 Antwerpen",btw:"BE0762899456",prestatie:"",prijs:0},
+  {contact:"Lise",bedrijf:"Madam Proost",adres:"Boomstraat 26",postplaats:"2300 Turnhout",btw:"BE0748396768",prestatie:"",prijs:0},
+  {contact:"Eva VM",bedrijf:"VM Advocaten",adres:"Langevelddreef 26/001",postplaats:"9840 De Pinte",btw:"BE0743582303",prestatie:"",prijs:0},
+  {contact:"Eline VM",bedrijf:"Easy Workflow LP",adres:"Langevelddreef 26/001",postplaats:"9840 De Pinte",btw:"BE0760356769",prestatie:"",prijs:0},
+  {contact:"Ward Bessemans",bedrijf:"HW Bessemans",adres:"Bevingen-centrum 12",postplaats:"3800 Sint Truiden",btw:"BE0808710279",prestatie:"",prijs:0},
+  {contact:"Cindy Bastiaens",bedrijf:"Huis ViventO bvba",adres:"Hoogstraat 14",postplaats:"2440 Geel",btw:"BE0839999214",prestatie:"",prijs:0},
+  {contact:"Laura Biesmans",bedrijf:"Lava Solutions BV",adres:"Dorpstraat 110",postplaats:"2950 Kapellen",btw:"BE0740774449",prestatie:"",prijs:0},
+  {contact:"Danielle Sax",bedrijf:"Danielle Sax",adres:"Prins Albertstraat 39A b3",postplaats:"9100 St-Niklaas",btw:"BE0668865181",prestatie:"",prijs:0},
+  {contact:"Judith",bedrijf:"Quercia vof",adres:"De Wieleman 30",postplaats:"9890 Dikkelvenne",btw:"BE0553951063",prestatie:"",prijs:0},
+  {contact:"Sunita Van Heers",bedrijf:"SVH BV",adres:"Akenkaai 69/17H",postplaats:"1000 Brussel",btw:"BE0741371097",prestatie:"",prijs:0},
+  {contact:"Stefan Bottu",bedrijf:"Coaching & Healing",adres:"Velkgerstraat 60",postplaats:"2800 Mechelen",btw:"BE0600966666",prestatie:"",prijs:0},
+  {contact:"Thomas Poelmans",bedrijf:"Green Crossroads BV",adres:"Ulensstraat 86/6",postplaats:"1080 Brussel",btw:"BE0556940148",prestatie:"",prijs:0},
+  {contact:"Stijn Geelen",bedrijf:"Blindganger comm v",adres:"Rattevallestraat 26",postplaats:"8433 Mannekensvere",btw:"BE0553725884",prestatie:"",prijs:0},
+  {contact:"Gerlinde Cooymans",bedrijf:"Officeffect",adres:"Hoge Kaart 173",postplaats:"2930 Brasschaat",btw:"BE0894303376",prestatie:"",prijs:0},
+  {contact:"Julie Vandermeulen",bedrijf:"Julie Vandermeulen",adres:"Naamsesteenweg 535/04.01",postplaats:"3001 Heverlee",btw:"BE0719263710",prestatie:"",prijs:0},
+  {contact:"Louis Van der Stichele",bedrijf:"LVDS Management Co",adres:"Kozakstraat 50",postplaats:"8560 Wevelgem",btw:"BE0711737005",prestatie:"",prijs:0},
+  {contact:"Falco VOF",bedrijf:"Dirk Lambrechts",adres:"Broekbosstraat 20",postplaats:"2550 Kontich",btw:"BE0765843209",prestatie:"",prijs:0},
+  {contact:"Marylien Malfait",bedrijf:"",adres:"Romeinse Put 106 bus 2",postplaats:"2650 Edegem",btw:"",prestatie:"",prijs:0},
+  {contact:"Ann Van Malderen",bedrijf:"IKADO bv",adres:"Le Corbusierlaan 8",postplaats:"2050 Antwerpen",btw:"BE0818075333",prestatie:"",prijs:0},
+  {contact:"Bert Marievoet",bedrijf:"Mad Valley BV",adres:"De Keersmaekerlaan 23",postplaats:"1785 Merchtem",btw:"BE0668389386",prestatie:"",prijs:0},
+  {contact:"Andrea Marquet",bedrijf:"",adres:"Van Asschestraat 78",postplaats:"2160 Wommelgem",btw:"BE0768157549",prestatie:"",prijs:0},
+  {contact:"Ella Moreno",bedrijf:"DentalCare&IM BV",adres:"Francisco Ferrerlaan 449",postplaats:"9000 Gent",btw:"BE0866160906",prestatie:"",prijs:0},
+];
+
+// Sort alphabetically
+CLIENTS.sort((a,b) => a.contact.localeCompare(b.contact, 'nl'));
+
+// ── HELPERS ──────────────────────────────────────────────────────────
+const fmt = n => '€ ' + n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const today = () => { const d = new Date(); return d.toISOString().split('T')[0]; };
+const addDays = (s, n) => { const d = new Date(s); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; };
+const fmtDate = s => { if(!s) return '—'; const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; };
+
+let lineCounter = 0;
+
+// ── INIT ─────────────────────────────────────────────────────────────
+function init() {
+  const t = today();
+  document.getElementById('inv-date').value = t;
+  document.getElementById('inv-due').value = addDays(t, 30);
+  document.getElementById('inv-date').addEventListener('change', e => {
+    document.getElementById('inv-due').value = addDays(e.target.value, 30);
+    updatePreview();
+  });
+
+  // Populate client dropdown
+  const sel = document.getElementById('client-select');
+  CLIENTS.forEach((c,i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = c.contact + (c.bedrijf ? ` — ${c.bedrijf}` : '');
+    sel.appendChild(opt);
+  });
+
+  addLine();
+  renderClientList();
+
+  // Live update preview on any input
+  document.addEventListener('input', e => { if(e.target.closest('.form-body')) { calcTotals(); updatePreview(); } });
+  updatePreview();
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn')[{form:0,preview:1,clients:2}[name]].classList.add('active');
+  if(name === 'preview') updatePreview();
+}
+
+// ── CLIENT FILL ──────────────────────────────────────────────────────
+function fillClient(idx) {
+  const i = idx !== undefined ? idx : parseInt(document.getElementById('client-select').value);
+  if(isNaN(i) || i === '') return;
+  const c = CLIENTS[i];
+  document.getElementById('client-select').value = i;
+  document.getElementById('client-contact').value = c.contact;
+  document.getElementById('client-bedrijf').value = c.bedrijf;
+  document.getElementById('client-adres').value = c.adres;
+  document.getElementById('client-postplaats').value = c.postplaats;
+  document.getElementById('inv-client-btw').value = c.btw;
+  // Pre-fill first line if it exists and is empty
+  const firstDesc = document.querySelector('.line-desc');
+  const firstPrijs = document.querySelector('.line-prijs');
+  if(firstDesc && !firstDesc.value && c.prestatie) firstDesc.value = c.prestatie;
+  if(firstPrijs && firstPrijs.value == '0' && c.prijs) firstPrijs.value = c.prijs;
+  calcTotals();
+  updatePreview();
+  switchTab('form');
+}
+
+// ── LINE ITEMS ────────────────────────────────────────────────────────
+function addLine(desc='', qty=1, price=0, btw=21) {
+  const id = ++lineCounter;
+  const wrap = document.getElementById('line-items');
+  const div = document.createElement('div');
+  div.className = 'line-item';
+  div.dataset.id = id;
+  div.dataset.btw = btw;
+  div.innerHTML = `
+    <button class="remove-btn" onclick="removeLine(${id})" title="Verwijder">✕</button>
+    <div class="field">
+      <label>Omschrijving</label>
+      <input class="line-desc" type="text" value="${esc(desc)}" placeholder="Dienst of prestatie" oninput="calcTotals();updatePreview()">
+    </div>
+    <div class="row-3">
+      <div class="field">
+        <label>Prijs excl. BTW</label>
+        <input class="line-prijs" type="number" value="${price}" min="0" step="0.01" oninput="calcTotals();updatePreview()">
+      </div>
+      <div class="field">
+        <label>Aantal</label>
+        <input class="line-qty" type="number" value="${qty}" min="1" step="1" oninput="calcTotals();updatePreview()">
+      </div>
+      <div class="field">
+        <label>Subtotaal excl.</label>
+        <input class="line-sub" type="text" readonly style="color:var(--soft);background:var(--rule);" value="${fmt(price*qty)}">
+      </div>
+    </div>
+    <div class="field">
+      <label>BTW tarief</label>
+      <div class="btw-toggle">
+        <button type="button" class="btw-btn${btw===21?' active':''}" onclick="setBtw(${id},21)">21%</button>
+        <button type="button" class="btw-btn${btw===6?' active':''}" onclick="setBtw(${id},6)">6%</button>
+        <button type="button" class="btw-btn${btw===0?' active-zero':''}" onclick="setBtw(${id},0)">Vrijgesteld</button>
+      </div>
+    </div>`;
+  wrap.appendChild(div);
+  calcTotals();
+}
+
+function setBtw(id, rate) {
+  const el = document.querySelector(`.line-item[data-id="${id}"]`);
+  if(!el) return;
+  el.dataset.btw = rate;
+  el.querySelectorAll('.btw-btn').forEach(b => {
+    b.className = 'btw-btn';
+    if(b.textContent === '21%' && rate === 21) b.classList.add('active');
+    else if(b.textContent === '6%' && rate === 6) b.classList.add('active');
+    else if(b.textContent === 'Vrijgesteld' && rate === 0) b.classList.add('active-zero');
+  });
+  calcTotals(); updatePreview();
+}
+
+function removeLine(id) {
+  const el = document.querySelector(`.line-item[data-id="${id}"]`);
+  if(el) el.remove();
+  calcTotals(); updatePreview();
+}
+
+function esc(s) { return String(s).replace(/"/g,'&quot;'); }
+
+// ── CALCULATIONS ──────────────────────────────────────────────────────
+function getLines() {
+  return [...document.querySelectorAll('.line-item')].map(el => ({
+    desc:  el.querySelector('.line-desc').value,
+    qty:   parseFloat(el.querySelector('.line-qty').value) || 0,
+    price: parseFloat(el.querySelector('.line-prijs').value) || 0,
+    btw:   parseFloat(el.dataset.btw ?? 21),
+  }));
+}
+
+function calcTotals() {
+  const lines = getLines();
+  lines.forEach((l, i) => {
+    const sub = l.qty * l.price;
+    const subEl = document.querySelectorAll('.line-sub')[i];
+    if(subEl) subEl.value = fmt(sub);
+  });
+  const subtotal = lines.reduce((s,l) => s + l.qty * l.price, 0);
+  const btwAmt = lines.reduce((s,l) => s + l.qty * l.price * (l.btw / 100), 0);
+  const total = subtotal + btwAmt;
+
+  document.getElementById('t-subtotal').textContent = fmt(subtotal);
+  document.getElementById('t-btw').textContent = fmt(btwAmt);
+  document.getElementById('t-total').textContent = fmt(total);
+}
+
+// ── PREVIEW ───────────────────────────────────────────────────────────
+function updatePreview() {
+  const num     = document.getElementById('inv-number').value || '—';
+  const date    = document.getElementById('inv-date').value;
+  const due     = document.getElementById('inv-due').value;
+  const cBtw    = document.getElementById('inv-client-btw').value;
+  const cont    = document.getElementById('client-contact').value;
+  const bedrijf = document.getElementById('client-bedrijf').value;
+  const adres   = document.getElementById('client-adres').value;
+  const postp   = document.getElementById('client-postplaats').value;
+  const reedsvoldaan = document.getElementById('reeds-voldaan').checked;
+  const lines   = getLines();
+
+  const subtotal = lines.reduce((s,l) => s + l.qty * l.price, 0);
+  const btwAmt   = lines.reduce((s,l) => s + l.qty * l.price * (l.btw / 100), 0);
+  const total    = subtotal + btwAmt;
+
+  // Group BTW amounts by rate for breakdown
+  const btwGroups = {};
+  lines.filter(l => l.price > 0 || l.desc).forEach(l => {
+    const base = l.qty * l.price;
+    const amt  = base * (l.btw / 100);
+    if(!btwGroups[l.btw]) btwGroups[l.btw] = { base: 0, amt: 0 };
+    btwGroups[l.btw].base += base;
+    btwGroups[l.btw].amt  += amt;
+  });
+
+  const tableRows = lines.filter(l => l.desc || l.price > 0).map(l => {
+    const btwLabel = l.btw === 0 ? 'Vrijgesteld' : l.btw + '%';
+    return `<tr>
+      <td>${l.desc || '–'}</td>
+      <td>${l.qty}</td>
+      <td>${fmt(l.price)}</td>
+      <td style="white-space:nowrap;font-size:0.75rem;color:var(--soft);padding-right:4px">${btwLabel}</td>
+      <td>${fmt(l.qty * l.price)}</td>
+    </tr>`;
+  }).join('');
+
+  const toLine = [
+    bedrijf ? `<strong>${bedrijf}</strong>` : '',
+    cont,
+    adres,
+    postp,
+    cBtw ? `BTW ${cBtw}` : ''
+  ].filter(Boolean).join('<br>');
+
+  const stampHTML = reedsvoldaan
+    ? `<div class="inv-stamp"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="7" cy="7" r="6.5" stroke="currentColor"/><path d="M4 7l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Reeds voldaan</div>`
+    : '';
+
+  const summaryHTML = reedsvoldaan
+    ? `<div class="inv-summary-box" style="border-color:var(--green)">
+        <div class="sum-title" style="color:var(--green)">Betaling ontvangen</div>
+        <dl class="inv-summary-grid">
+          <dt>Rekening</dt><dd>BE02739018841340</dd>
+          <dt>Referentie</dt><dd>${num}</dd>
+          <dt>Bedrag</dt><dd>${fmt(total)}</dd>
+        </dl>
+      </div>`
+    : `<div class="inv-summary-box">
+        <div class="sum-title">Betalingsgegevens</div>
+        <dl class="inv-summary-grid">
+          <dt>Rekening</dt><dd>BE02739018841340</dd>
+          <dt>Mededeling</dt><dd>${num}</dd>
+          <dt>Bedrag</dt><dd>${fmt(total)}</dd>
+        </dl>
+      </div>`;
+
+  document.getElementById('invoice-preview').innerHTML = `
+    <div class="inv-header">
+      <div class="inv-company">
+        <h2>Shambhala</h2>
+        <p>Hemelstraat 4<br>2018 Antwerpen<br>IBAN BE02739018841340<br>BTW BE0740675568</p>
+      </div>
+      <div class="inv-meta">
+        <span class="inv-label">Factuur</span>
+        <div class="inv-number">${num}</div>
+        <div class="inv-dates">
+          Datum: ${fmtDate(date)}<br>
+          Vervaldag: ${fmtDate(due)}
+        </div>
+      </div>
+    </div>
+
+    <div class="inv-to-block">
+      <div class="to-label">Aan</div>
+      <p>${toLine || '<em style="color:var(--soft)">Geen klant geselecteerd</em>'}</p>
+    </div>
+
+    ${stampHTML}
+
+    <table class="inv-table">
+      <thead>
+        <tr>
+          <th>Omschrijving</th>
+          <th>Aantal</th>
+          <th>Prijs excl. BTW</th>
+          <th style="color:var(--soft)">BTW</th>
+          <th>Subtotaal</th>
+        </tr>
+      </thead>
+      <tbody>${tableRows || '<tr><td colspan="5" style="color:var(--soft);font-style:italic">Geen prestaties ingevoerd</td></tr>'}</tbody>
+    </table>
+
+    <div class="inv-totals">
+      <div class="inv-total-row"><span>Subtotaal excl. BTW</span><span>${fmt(subtotal)}</span></div>
+      ${Object.entries(btwGroups).sort((a,b)=>b[0]-a[0]).map(([rate, g]) =>
+        rate === '0'
+          ? `<div class="inv-total-row" style="color:var(--soft)"><span>Vrijgesteld (0%)</span><span>—</span></div>`
+          : `<div class="inv-total-row"><span>BTW ${rate}% <span style="color:var(--soft);font-size:0.75rem">op ${fmt(g.base)}</span></span><span>${fmt(g.amt)}</span></div>`
+      ).join('')}
+      <div class="inv-total-divider"></div>
+      <div class="inv-total-final"><span>Te betalen</span><span>${fmt(total)}</span></div>
+    </div>
+
+    ${summaryHTML}
+
+    <div class="inv-conditions">
+      <strong>Betalingsvoorwaarden</strong>
+      Elke op de vervaldag onbetaalde factuur wordt van rechtswege en zonder ingebrekestelling verhoogd met een tarief van 1,5% per maand vanaf de factuurdatum. Bovendien wordt van rechtswege en zonder ingebrekestelling een schadevergoeding van 15% van de factuur in rekening gebracht met een minimum van € 400,00. Elke factuur wordt geacht te zijn goedgekeurd en aanvaard, tenzij binnen een termijn van acht kalenderdagen na factuurdatum per aangetekende brief een nauwkeurige en gedetailleerde klacht volgt. In geval van betwisting zijn enkel de Rechtbanken van Antwerpen (België) verantwoordelijk en bevoegd.
+    </div>`;
+}
+
+// ── CLIENTS LIST ──────────────────────────────────────────────────────
+function renderClientList() {
+  const q = document.getElementById('client-filter').value.toLowerCase();
+  const list = document.getElementById('client-list');
+  list.innerHTML = '';
+  CLIENTS.forEach((c, i) => {
+    if(q && !c.contact.toLowerCase().includes(q) && !c.bedrijf.toLowerCase().includes(q)) return;
+    const div = document.createElement('div');
+    div.className = 'client-card';
+    div.innerHTML = `<div class="client-name">${c.contact}</div>
+      <div class="client-detail">${[c.bedrijf, c.postplaats].filter(Boolean).join(' · ')}</div>`;
+    div.onclick = () => fillClient(i);
+    list.appendChild(div);
+  });
+}
+
+// ── NEW CLIENT MODAL ─────────────────────────────────────────────────
+function openNewClientModal() {
+  ['nc-contact','nc-bedrijf','nc-adres','nc-postplaats','nc-btw'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('new-client-modal').classList.add('open');
+  setTimeout(() => document.getElementById('nc-contact').focus(), 100);
+}
+
+function closeNewClientModal() {
+  document.getElementById('new-client-modal').classList.remove('open');
+}
+
+function closeModalIfOutside(e) {
+  if(e.target === document.getElementById('new-client-modal')) closeNewClientModal();
+}
+
+function saveNewClient() {
+  const contact = document.getElementById('nc-contact').value.trim();
+  if(!contact) { document.getElementById('nc-contact').focus(); return; }
+  const newClient = {
+    contact,
+    bedrijf: document.getElementById('nc-bedrijf').value.trim(),
+    adres:   document.getElementById('nc-adres').value.trim(),
+    postplaats: document.getElementById('nc-postplaats').value.trim(),
+    btw:     document.getElementById('nc-btw').value.trim(),
+    prestatie: '',
+    prijs: 0
+  };
+  CLIENTS.push(newClient);
+  CLIENTS.sort((a,b) => a.contact.localeCompare(b.contact, 'nl'));
+
+  // Rebuild dropdown
+  const sel = document.getElementById('client-select');
+  sel.innerHTML = '<option value="">— Kies klant of vul manueel in —</option>';
+  CLIENTS.forEach((c,i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = c.contact + (c.bedrijf ? ` — ${c.bedrijf}` : '');
+    sel.appendChild(opt);
+  });
+
+  closeNewClientModal();
+  const idx = CLIENTS.findIndex(c => c.contact === contact && c.bedrijf === newClient.bedrijf);
+  fillClient(idx);
+  renderClientList();
+  switchTab('form');
+}
+
+// ── PRINT ─────────────────────────────────────────────────────────────
+function printInvoice() {
+  updatePreview();
+  switchTab('preview');
+  setTimeout(() => window.print(), 200);
+}
+
+// ── START ─────────────────────────────────────────────────────────────
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
